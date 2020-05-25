@@ -21,6 +21,8 @@
 
 declare(strict_types=1);
 
+use function this_build_script\preg_quote_array;
+
 const SITE = "http://primegames.net/NxiDUSvq/";
 const TEMPBACKUPDIR = __DIR__ . "/.backup";
 const BACKUPDIR = "/backupdrive";
@@ -33,7 +35,7 @@ const GAMEMODES = [
     "kitpvp",
     "creative"];
 
-if(!isset($argv[1]) or $argv[1] !== "setup" or !isset($argv[2])){
+if(!isset($argv[1])){
     printUsage();
     exit();
 }
@@ -60,8 +62,9 @@ function setupServer(){
     foreach (GAMEMODES as $gamemode){
         getPMMPBinary();
         updatePMMP($gamemode);
-        updateWorlds($gamemode);
+        downloadWorlds($gamemode);
         updateRepo($gamemode);
+        buildPluginPhar($gamemode);
     }
 }
 
@@ -76,7 +79,7 @@ function updatePMMP(string $gamemode) {
     }
 }
 
-function updateWorlds(string $gamemode) {
+function downloadWorlds(string $gamemode) {
     backupGamemode($gamemode);
     $serverworlds = [
         "factions" => [
@@ -105,17 +108,17 @@ function updateWorlds(string $gamemode) {
 
     foreach($serverworlds as $server => $worlds) {
         if($gamemode === $server) {
-            $serverworlds = $worlds;
+            $serverWorlds = $worlds;
         }
     }
-
     writeln(PHP_EOL . "> Setting up $gamemode worlds. This may take a few minutes ... ");
-    @mkdir(getcwd() . "servers/$gamemode/worlds");
+    @mkdir(getcwd() . "/servers/$gamemode/worlds");
     writeln("");
     $worldDir = getcwd() . "/servers/$gamemode/worlds/";
-    foreach($serverworlds as $world) {
-        if(is_dir($worldDir . $world)) {
-            unlink($worldDir . $world);
+    foreach($serverWorlds as $world) {
+        if(is_dir($worldDir . $world) and is_file($worldDir . $world . "level.dat")) {
+            writeln("$world found in world $worldDir! skipping...");
+            continue;
         }
         doTask("Downloading $world.zip", static function() use ($worldDir, $world) {
             if(!copy(SITE . "$world.zip", $worldDir . "$world.zip")) {
@@ -186,6 +189,9 @@ function stopServer(string $gamemode){
 
 function getPMMPBinary(){
     $dir = getcwd();
+    if(file_exists(getcwd()."/bin")){
+        return;
+    }
     doTask("Downloading PMMP Binary", static function() {
         if(!file_exists(getcwd() . "/bin")){
             if(!copy("https://jenkins.pmmp.io/job/PHP-7.3-Aggregate/lastSuccessfulBuild/artifact/PHP-7.3-Linux-x86_64.tar.gz", getcwd() . "/bin.tar.gz")) {
@@ -194,6 +200,13 @@ function getPMMPBinary(){
         }
     });
     exec("tar -xvzf $dir/bin.tar.gz");
+}
+
+function buildPluginPhar(string $gamemode){
+    //@mkdir(getcwd()."/servers/$gamemode/plugins");
+    $plugin = strtoupper($gamemode);
+    buildPhar(getcwd(). "/servers/$gamemode/plugins/Primer.phar", 'plugins/Primer', []);
+    //buildPhar(getcwd()." /servers/$gamemode/plugins/$plugin.phar", "plugins/$plugin", []);
 }
 
 function doTask(string $message, Closure $task): void {
@@ -238,4 +251,78 @@ function syncRepo(string $addr, string $output): void {
             }
         });
     }
+}
+
+/**
+ * @param string   $pharPath
+ * @param string   $basePath
+ * @param string[] $includedPaths
+ * @param array    $metadata
+ * @param string   $stub
+ * @param int      $signatureAlgo
+ * @param int|null $compression
+ */
+function buildPhar(string $pharPath, string $basePath, array $includedPaths, int $signatureAlgo = \Phar::SHA1, ?int $compression = null){
+    $basePath = realpath($basePath);
+    if(file_exists($pharPath)){
+        echo "Phar file already exists, overwriting...\n";
+        try{
+            \Phar::unlinkArchive($pharPath);
+        }catch(\PharException $e){
+            //unlinkArchive() doesn't like dodgy phars
+            unlink($pharPath);
+        }
+    }
+    @mkdir(dirname($pharPath));
+    echo "Adding files...\n";
+
+    $start = microtime(true);
+    $phar = new \Phar($pharPath);
+    $phar->setMetadata([]);
+    $phar->setStub('<?php __HALT_COMPILER();');
+    $phar->setSignatureAlgorithm($signatureAlgo);
+    $phar->startBuffering();
+
+    //If paths contain any of these, they will be excluded
+    $excludedSubstrings = preg_quote_array([
+        realpath($pharPath), //don't add the phar to itself
+    ], '/');
+
+    $folderPatterns = preg_quote_array([
+        DIRECTORY_SEPARATOR . 'tests' . DIRECTORY_SEPARATOR,
+        DIRECTORY_SEPARATOR . '.' //"Hidden" files, git dirs etc
+    ], '/');
+
+    //Only exclude these within the basedir, otherwise the project won't get built if it itself is in a directory that matches these patterns
+    $basePattern = preg_quote(rtrim($basePath, DIRECTORY_SEPARATOR), '/');
+    foreach($folderPatterns as $p){
+        $excludedSubstrings[] = $basePattern . '.*' . $p;
+    }
+
+    $regex = sprintf('/^(?!.*(%s))^%s(%s).*/i',
+        implode('|', $excludedSubstrings), //String may not contain any of these substrings
+        preg_quote($basePath, '/'), //String must start with this path...
+        implode('|', preg_quote_array($includedPaths, '/')) //... and must be followed by one of these relative paths, if any were specified. If none, this will produce a null capturing group which will allow anything.
+    );
+
+    $directory = new \RecursiveDirectoryIterator($basePath, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::FOLLOW_SYMLINKS | \FilesystemIterator::CURRENT_AS_PATHNAME); //can't use fileinfo because of symlinks
+    $iterator = new \RecursiveIteratorIterator($directory);
+    $regexIterator = new \RegexIterator($iterator, $regex);
+
+    $count = count($phar->buildFromIterator($regexIterator, $basePath));
+    echo "Added $count files\n";
+
+    if($compression !== null){
+        echo "Checking for compressible files...\n";
+        foreach($phar as $file => $finfo){
+            /** @var \PharFileInfo $finfo */
+            if($finfo->getSize() > (1024 * 512)){
+                echo "Compressing " . $finfo->getFilename() . "\n";
+                $finfo->compress($compression);
+            }
+        }
+    }
+    $phar->stopBuffering();
+
+    echo "Built $pharPath in " . round(microtime(true) - $start, 3) . "s\n";
 }
