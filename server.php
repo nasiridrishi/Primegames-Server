@@ -34,7 +34,7 @@ const GAMEMODES = [
     "creative"];
 
 if(!isset($argv[1]) or $argv[1] !== "setup" or !isset($argv[2])){
-    throw new RuntimeException("php server.php {gamemode name} start|stop|updatepm|updatplug|updateworld|backup");
+    exit();
 }
 
 if($argv[1] === "setup"){
