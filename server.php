@@ -38,6 +38,10 @@ const GAMEMODES = [
 $server = $argv[1];
 $function = $argv[2];
 
+if($server === "setup"){
+    setupServer();
+}
+
 foreach(GAMEMODES as $GAMEMODE){
     if($server === $GAMEMODE){
         if($function === "start"){
@@ -48,6 +52,14 @@ foreach(GAMEMODES as $GAMEMODE){
 
 function printUsage(){
     writeln("gamemode start|stop|updatepm|updatplug|updateworld|backup");
+}
+
+function setupServer(){
+    foreach (GAMEMODES as $GAMEMODE){
+        updatePMMP($GAMEMODE);
+        updateWorlds($GAMEMODE);
+        updateRepo($GAMEMODE);
+    }
 }
 
 function updatePMMP(string $gamemode) {
@@ -120,13 +132,6 @@ function updateWorlds(string $gamemode) {
             unlink($worldDir . "$world.zip");
         });
     }
-}
-
-function updatePlugin(string $gamemode) {
-    backupGamemode($gamemode);
-    writeln("> Cloning plugin repository $gamemode");
-    @mkdir(__DIR__ . "/plugins");
-    syncRepo("https://github.com/PrimeGamesDevTeam/$gamemode.git", __DIR__ . "/plugins/$gamemode");
 }
 
 function updateRepo(string $gamemode, bool $updateCore = true) {
