@@ -45,6 +45,7 @@ foreach(GAMEMODES as $GAMEMODE){
     if($server === $GAMEMODE){
         if($function === "start"){
             startServer($server);
+            attatchScreen($server);
         }
     }
 }
@@ -157,6 +158,10 @@ function backupGamemode(string $gamemode) {
     echo exec("mv $gamemode_acive $backupDIR");
     toggleAutoSave($gamemode);
     writeln("$gamemode succefully backed up");
+}
+
+function attatchScreen(string $gamemode){
+    exec("screen -x $gamemode");
 }
 
 function toggleAutoSave(string $gamemode){
