@@ -109,7 +109,7 @@ function updateWorlds(string $gamemode) {
     }
 
     writeln(PHP_EOL . "> Setting up $gamemode worlds. This may take a few minutes ... ");
-    @mkdir(SERVERLOC / $gamemode);
+    @mkdir(SERVERLOC . "/ $gamemode");
     @mkdir(SERVERLOC . "/$gamemode/worlds");
     writeln("");
     $worldDir = getcwd() . "/servers/$gamemode/worlds/";
