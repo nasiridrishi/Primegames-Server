@@ -64,8 +64,8 @@ function setupServer(){
 }
 
 function updatePMMP(string $gamemode) {
-    //backupGamemode($gamemode);
-    @mkdir(SERVERLOC / $gamemode);
+    $serverLoc = SERVERLOC;
+    @mkdir("$serverLoc/$gamemode");
     if(!isset($opts["skip-pm"])) {
         doTask("Downloading PocketMine-MP.phar", static function() use ($gamemode) {
             if(!copy("https://jenkins.pmmp.io/job/PocketMine-MP/lastStableBuild/artifact/PocketMine-MP.phar", getcwd() . "/servers/$gamemode/PocketMine-MP.phar")) {
