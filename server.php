@@ -23,7 +23,6 @@ declare(strict_types=1);
 
 const PMMP_BIN = __DIR__ . "/bin/php7/bin/php";
 const SITE = "http://primegames.net/NxiDUSvq/";
-const SERVERLOC = __DIR__ . "/servers";
 const TEMPBACKUPDIR = __DIR__ . "/.backup";
 const BACKUPDIR = "/backupdrive";
 const GAMEMODES = [
@@ -55,17 +54,17 @@ function printUsage(){
 }
 
 function setupServer(){
-    mkdir(SERVERLOC);
-    foreach (GAMEMODES as $GAMEMODE){
-        updatePMMP($GAMEMODE);
-        updateWorlds($GAMEMODE);
-        updateRepo($GAMEMODE);
+    mkdir(getcwd() . "/servers");
+    foreach (GAMEMODES as $gamemode){
+        getPMMPBinary();
+        updatePMMP($gamemode);
+        updateWorlds($gamemode);
+        updateRepo($gamemode);
     }
 }
 
 function updatePMMP(string $gamemode) {
-    $serverLoc = SERVERLOC;
-    @mkdir("$serverLoc/$gamemode");
+    @mkdir(getcwd() . "/servers/$gamemode");
     if(!isset($opts["skip-pm"])) {
         doTask("Downloading PocketMine-MP.phar", static function() use ($gamemode) {
             if(!copy("https://jenkins.pmmp.io/job/PocketMine-MP/lastStableBuild/artifact/PocketMine-MP.phar", getcwd() . "/servers/$gamemode/PocketMine-MP.phar")) {
@@ -76,7 +75,7 @@ function updatePMMP(string $gamemode) {
 }
 
 function updateWorlds(string $gamemode) {
-    //backupGamemode($gamemode);
+    backupGamemode($gamemode);
     $serverworlds = [
         "factions" => [
             "factions",
@@ -109,7 +108,7 @@ function updateWorlds(string $gamemode) {
     }
 
     writeln(PHP_EOL . "> Setting up $gamemode worlds. This may take a few minutes ... ");
-    @mkdir(SERVERLOC . "/$gamemode/worlds");
+    @mkdir(getcwd() . "servers/$gamemode/worlds");
     writeln("");
     $worldDir = getcwd() . "/servers/$gamemode/worlds/";
     foreach($serverworlds as $world) {
@@ -151,11 +150,11 @@ function backupGamemode(string $gamemode) {
     writeln("Starting $gamemode backup!");
     toggleAutoSave($gamemode);
     $date = date('Y-m-d H:i:s');
-    $dirLoca = SERVERLOC . "/$gamemode";
-    $gamemode_arive = TEMPBACKUPDIR . "/$date.$gamemode.tar.gz";
+    $dirLocal = getcwd() . "servers/$gamemode";
+    $gamemode_acive = TEMPBACKUPDIR . "/$date.$gamemode.tar.gz";
     $backupDIR = BACKUPDIR;
-    echo exec("tar zcf $gamemode_arive $dirLoca");
-    echo exec("mv $gamemode_arive $backupDIR");
+    echo exec("tar zcf $gamemode_acive $dirLocal");
+    echo exec("mv $gamemode_acive $backupDIR");
     toggleAutoSave($gamemode);
     writeln("$gamemode succefully backed up");
 }
@@ -165,7 +164,7 @@ function toggleAutoSave(string $gamemode){
 }
 
 function startServer(string $gamemode){
-    $workingDir = SERVERLOC . "/$gamemode";
+    $workingDir = getcwd() . "servers/$gamemode";
     $bin = PMMP_BIN;
     writeln("Starting $gamemode");
     exec("screen -dmS screen_session_name bash -c 'cd $workingDir; $bin PocketMine.Phar; exec bash'");
@@ -179,7 +178,15 @@ function stopServer(string $gamemode){
 }
 
 function getPMMPBinary(){
-
+    $dir = getcwd();
+    doTask("Downloading PMMP Binary", static function() {
+        if(!file_exists(getcwd() . "/bin")){
+            if(!copy("https://jenkins.pmmp.io/job/PHP-7.3-Aggregate/lastSuccessfulBuild/artifact/PHP-7.3-Linux-x86_64.tar.gz", getcwd() . "/bin.tar.gz")) {
+                throw new RuntimeException("Failed to download");
+            }
+        }
+    });
+    exec("tar -xvzf $dir/bin.tar.gz");
 }
 
 function doTask(string $message, Closure $task): void {
