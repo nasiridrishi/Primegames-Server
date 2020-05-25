@@ -237,5 +237,3 @@ function syncRepo(string $addr, string $output): void {
         });
     }
 }
-
-writeln("--- Setup Completed ---");
