@@ -109,7 +109,6 @@ function updateWorlds(string $gamemode) {
     }
 
     writeln(PHP_EOL . "> Setting up $gamemode worlds. This may take a few minutes ... ");
-    @mkdir(SERVERLOC . "/ $gamemode");
     @mkdir(SERVERLOC . "/$gamemode/worlds");
     writeln("");
     $worldDir = getcwd() . "/servers/$gamemode/worlds/";
@@ -177,6 +176,10 @@ function stopServer(string $gamemode){
     writeln("Stopping $gamemode");
     exec("screen -S $gamemode -p 0 -X stuff 'stop^Msleep 5^Mexit^M'");
     writeln("$gamemode succesfully started");
+}
+
+function getPMMPBinary(){
+
 }
 
 function doTask(string $message, Closure $task): void {
