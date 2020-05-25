@@ -33,24 +33,19 @@ const GAMEMODES = [
     "kitpvp",
     "creative"];
 
-$server = $argv[1];
-$function = $argv[2];
-
-if(!isset($server)){
-    if(!$server === "setup" or !isset($function)){
-        printUsage();
-    }
+if(!isset($argv[1]) or $argv[1] !== "setup" or !isset($argv[2])){
+    printUsage();
 }
 
-if($server === "setup"){
+if($argv[1] === "setup"){
     setupServer();
 }
 
 foreach(GAMEMODES as $GAMEMODE){
-    if($server === $GAMEMODE){
-        if($function === "start"){
-            startServer($server);
-            attatchScreen($server);
+    if($argv[1] === $GAMEMODE){
+        if($argv[2] === "start"){
+            startServer($argv[1]);
+            attatchScreen($argv[1]);
         }
     }
 }
