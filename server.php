@@ -168,7 +168,7 @@ function toggleAutoSave(string $gamemode){
 }
 
 function startServer(string $gamemode){
-    $workingDir = getcwd() . "servers/$gamemode";
+    $workingDir = getcwd() . "/servers/$gamemode";
     $bin = getcwd() . "/bin/php7/bin/php";
     writeln("Starting $gamemode");
     exec("screen -dmS $gamemode bash -c 'cd $workingDir; $bin PocketMine-MP.phar; exec bash'");
