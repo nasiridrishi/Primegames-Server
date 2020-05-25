@@ -36,7 +36,7 @@ const GAMEMODES = [
     "creative"];
 
 $server = $argv[1];
-$function = $argv[2];
+//$function = $argv[2];
 
 if($server === "setup"){
     setupServer();
@@ -55,6 +55,7 @@ function printUsage(){
 }
 
 function setupServer(){
+    mkdir(SERVERLOC);
     foreach (GAMEMODES as $GAMEMODE){
         updatePMMP($GAMEMODE);
         updateWorlds($GAMEMODE);
@@ -63,7 +64,7 @@ function setupServer(){
 }
 
 function updatePMMP(string $gamemode) {
-    backupGamemode($gamemode);
+    //backupGamemode($gamemode);
     @mkdir(SERVERLOC / $gamemode);
     if(!isset($opts["skip-pm"])) {
         doTask("Downloading PocketMine-MP.phar", static function() use ($gamemode) {
@@ -75,7 +76,7 @@ function updatePMMP(string $gamemode) {
 }
 
 function updateWorlds(string $gamemode) {
-    backupGamemode($gamemode);
+    //backupGamemode($gamemode);
     $serverworlds = [
         "factions" => [
             "factions",
