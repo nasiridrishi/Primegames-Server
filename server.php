@@ -36,6 +36,12 @@ const GAMEMODES = [
 $server = $argv[1];
 $function = $argv[2];
 
+if(!isset($server)){
+    if(!$server === "setup" or !isset($function)){
+        printUsage();
+    }
+}
+
 if($server === "setup"){
     setupServer();
 }
@@ -50,7 +56,7 @@ foreach(GAMEMODES as $GAMEMODE){
 }
 
 function printUsage(){
-    writeln("gamemode start|stop|updatepm|updatplug|updateworld|backup");
+    writeln("php server.php {gamemode name} start|stop|updatepm|updatplug|updateworld|backup");
 }
 
 function setupServer(){
@@ -171,6 +177,7 @@ function startServer(string $gamemode){
     $workingDir = getcwd() . "/servers/$gamemode";
     $bin = getcwd() . "/bin/php7/bin/php";
     writeln("Starting $gamemode");
+    exec("screen -S $gamemode -x select . ; echo $?");
     exec("screen -dmS $gamemode bash -c 'cd $workingDir; $bin PocketMine-MP.phar; exec bash'");
     writeln("$gamemode sucessfully started");
 }
