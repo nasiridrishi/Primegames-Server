@@ -34,7 +34,7 @@ const GAMEMODES = [
     "creative"];
 
 if(!isset($argv[1]) or $argv[1] !== "setup" or !isset($argv[2])){
-    printUsage();
+    throw new RuntimeException("php server.php {gamemode name} start|stop|updatepm|updatplug|updateworld|backup");
 }
 
 if($argv[1] === "setup"){
@@ -48,10 +48,6 @@ foreach(GAMEMODES as $GAMEMODE){
             attatchScreen($argv[1]);
         }
     }
-}
-
-function printUsage(){
-    writeln("php server.php {gamemode name} start|stop|updatepm|updatplug|updateworld|backup");
 }
 
 function setupServer(){
