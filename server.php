@@ -172,7 +172,7 @@ function startServer(string $gamemode){
     $workingDir = getcwd() . "servers/$gamemode";
     $bin = PMMP_BIN;
     writeln("Starting $gamemode");
-    exec("screen -dmS $gamemode bash -c 'cd $workingDir; $bin PocketMine-MP.Phar; exec bash'");
+    exec("screen -dmS $gamemode bash -c 'cd $workingDir; $bin PocketMine-MP.phar; exec bash'");
     writeln("$gamemode sucessfully started");
 }
 
