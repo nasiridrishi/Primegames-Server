@@ -35,7 +35,7 @@ const GAMEMODES = [
     "creative"];
 
 $server = $argv[1];
-//$function = $argv[2];
+$function = $argv[2];
 
 if($server === "setup"){
     setupServer();
