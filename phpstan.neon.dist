@@ -1,0 +1,8 @@
+parameters:
+	paths:
+		- plugins
+	level: 5
+	autoload_files:
+		- phar://%currentWorkingDirectory%/server/PocketMine-MP.phar/vendor/autoload.php
+	autoload_directories:
+		- plugins
