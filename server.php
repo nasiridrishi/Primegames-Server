@@ -21,7 +21,6 @@
 
 declare(strict_types=1);
 
-const PMMP_BIN = __DIR__ . "/bin/php7/bin/php";
 const SITE = "http://primegames.net/NxiDUSvq/";
 const TEMPBACKUPDIR = __DIR__ . "/.backup";
 const BACKUPDIR = "/backupdrive";
@@ -170,7 +169,7 @@ function toggleAutoSave(string $gamemode){
 
 function startServer(string $gamemode){
     $workingDir = getcwd() . "servers/$gamemode";
-    $bin = PMMP_BIN;
+    $bin = getcwd() . "/bin/php7/bin/php";
     writeln("Starting $gamemode");
     exec("screen -dmS $gamemode bash -c 'cd $workingDir; $bin PocketMine-MP.phar; exec bash'");
     writeln("$gamemode sucessfully started");
